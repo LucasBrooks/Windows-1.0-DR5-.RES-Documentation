@@ -1,0 +1,68 @@
+
+= Windows 1.0 DR5 Resource Format
+
+[abstract]
+== Summary
+This document contains information about the Windows 1.0 Development Release #5 Resource Format. This file format was never officially documented by Microsoft, and no published software can handle it. This document might not be fully reliable.
+
+[preface]
+== Document information
+[cols="1,5"]
+|===
+| Author(s): | Lucas Brooks
+| Abstract: | This document contains information about the Windows 1.0 Development Release #5 Resource Format
+| Classification: | Public
+| Keywords: | RES, DR5, Windows Resource File, DR5 .RES
+|===
+
+[preface]
+== Revision history
+[cols="1,1,1,5",options="header"]
+|===
+| Version | Author | Date | Comments
+| 0.0.1 | Lucas Brooks | March 2021 | Initial version
+|===
+
+== Sections
+
+* File Header - 14 bytes
+* Resource Headers - 42 bytes for each resource
+* Resource Body - Compiled resources
+
+== File Header
+
+Defines the number of resources and the total header length (File Header and Resource Headers).
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | numRes | Number of resources
+| 4 | 4 | headLength | Total header length (File Header and Resource Headers)
+| 8 | 6 | `6 DUP(0)` | Unknown/reserved
+|===
+
+== Resource Headers
+
+Contains information about every resource in the `.res` file, a resource header for every resource.
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 2 | `0` | Unknown/reserved
+| 2 | 16 | resName | Resource name
+| 18 | 16 | resType | Resource type
+| 34 | 4 | resSize | Resource size
+| 38 | 4 | resAddr | Resource location (relative to Resource Body)
+|===
+
+== Resource Body
+
+Contains compiled resources, no alignments or paddings.
+
+== Limitations
+
+It appears that a resource file cannot safely contain more than 50 resources. While the resource script will compile with 51 or more resources defined, the compiled `.res` will look slightly different and there is no guarantee that it will function as expected.
+
+When there are more than 50 resources, the last 2 bytes of the first field of the file header (numRes) will be overwritten by the first 2 bytes of the name of the 51^st^ resource. The resource header of all resources after the 50^th^ will look different. Instead of being padded with zeros if the name or type is less than 16 bytes, all resource headers after the 50^th^ one will be padded with seemingly random bytes from memory, most likely from the resource compiler itself.
+
+Even worse, the 51^st^ resource header will have its first 14 bytes overwritten by the file header. The strings despite not being padded, will still be null-terminated, so they will not cause troubles. The last 2 bytes of numRes being overwritten does not seem to have any impacts, but the 51^st^ resource header will be invalid as the resource name will be messed up (although the first 2 characters will be the same). This is most likely due to a bug in the resource compiler code..
